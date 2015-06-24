@@ -12,6 +12,7 @@ class Benchmark(object):
         parser.add_argument('--no_figs', action='store_true')
         parser.add_argument('--show_figs', action='store_true')
         parser.add_argument('--subdir', type=str, default='data')
+        parser.add_argument('--debug', action='store_true')
 
         params = self.params()
 
@@ -39,6 +40,10 @@ class Benchmark(object):
     def run(self):
         print('running %s' % self.filename)
         p = self.param_settings
+
+        if p.debug:
+            import logging
+            logging.basicConfig(level=logging.DEBUG)
         rng = np.random.RandomState(seed=p.seed)
         module = importlib.import_module(p.backend)
         Simulator = module.Simulator
