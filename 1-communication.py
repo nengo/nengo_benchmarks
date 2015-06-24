@@ -1,41 +1,56 @@
 """
-Nengo Benchmark Model #1: Communication Channel
+Nengo Benchmark Model: Communication Channel
 
 Input: Randomly chosen D-dimensional value
 Ouput: the same value as the input
 """
 
-D = 2       # number of dimensions
-L = 2       # number of layers
-N = 100     # number of neurons per layer
-pstc = 0.01 # synaptic time constant
-T = 1.0     # amount of time to run for
-
+import benchmark
+import nengo
 import numpy as np
 
-import nengo
+class CommunicationChannel(benchmark.Benchmark):
+    def params(self):
+        return dict(
+            D=2,       # number of dimensions
+            L=2,       # number of layers
+            N=100,     # number of neurons per layer
+            pstc=0.01, # synaptic time constant
+            T=1.0,     # amount of time to run for
+        )
 
-model = nengo.Network()
-with model:
-    value = np.random.randn(D)
-    value /= np.linalg.norm(value)
+    def benchmark(self, p, Simulator, rng, plt):
+        model = nengo.Network(seed=p.seed)
+        with model:
+            value = rng.randn(p.D)
+            value /= np.linalg.norm(value)
 
-    input = nengo.Node(value)
+            input = nengo.Node(value)
 
-    layers = [nengo.Ensemble(N, D) for i in range(L)]
+            layers = [nengo.Ensemble(p.N, p.D) for i in range(p.L)]
 
-    nengo.Connection(input, layers[0])
-    for i in range(L-1):
-        nengo.Connection(layers[i], layers[i+1], synapse=pstc)
+            nengo.Connection(input, layers[0])
+            for i in range(p.L-1):
+                nengo.Connection(layers[i], layers[i+1], synapse=p.pstc)
 
-    pInput = nengo.Probe(input)
-    pOutput = nengo.Probe(layers[-1], synapse=pstc)
+            pInput = nengo.Probe(input)
+            pOutput = nengo.Probe(layers[-1], synapse=p.pstc)
 
-sim = nengo.Simulator(model)
-sim.run(T)
+        sim = Simulator(model, dt=p.dt)
+        sim.run(p.T)
 
-import pylab
-pylab.plot(sim.trange(), sim.data[pOutput])
-pylab.plot(sim.trange(), sim.data[pInput])
-pylab.show()
+        ideal = sim.data[pInput]
+        for i in range(p.L):
+            ideal = nengo.synapses.filt(ideal, nengo.Lowpass(p.pstc), p.dt)
 
+
+        if plt is not None:
+            plt.plot(sim.trange(), sim.data[pOutput])
+            plt.plot(sim.trange(), ideal)
+            plt.ylim(-1,1)
+
+        rmse = np.sqrt(np.mean(sim.data[pOutput] - ideal)**2)
+        return dict(rmse=rmse)
+
+if __name__ == '__main__':
+    b = CommunicationChannel().run()
