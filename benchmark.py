@@ -1,5 +1,6 @@
 import argparse
 import importlib
+import logging
 import os
 
 import matplotlib.pyplot
@@ -42,8 +43,9 @@ class Benchmark(object):
         p = self.param_settings
 
         if p.debug:
-            import logging
             logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.ERROR)
         rng = np.random.RandomState(seed=p.seed)
         module = importlib.import_module(p.backend)
         Simulator = module.Simulator
