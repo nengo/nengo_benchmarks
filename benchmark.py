@@ -62,8 +62,8 @@ class Benchmark(object):
 
 
         if plt is not None:
-            plt.title(self.filename.replace('#', '\n') +'\n' + text,
-                      fontsize=10)
+            plt.suptitle(self.filename.replace('#', '\n') +'\n' + text,
+                         fontsize=10)
 
         fn = self.filename
         if not os.path.exists(p.subdir):
