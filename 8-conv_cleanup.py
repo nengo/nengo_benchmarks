@@ -91,6 +91,12 @@ class ConvolutionCleanup(benchmark.Benchmark):
             probe = nengo.Probe(model.clean_result.state.output, synapse=0.02)
             probe_wm = nengo.Probe(model.bound.state.output, synapse=0.02)
 
+
+        import nengo_info
+        info = nengo_info.NengoInfo(model)
+        info.print_info()
+
+
         if p.backend == 'nengo_spinnaker':
             import nengo_spinnaker
             nengo_spinnaker.add_spinnaker_params(model.config)
@@ -99,7 +105,7 @@ class ConvolutionCleanup(benchmark.Benchmark):
                     node.size_out > 0 and
                     callable(node.output)):
                         model.config[node].function_of_time = True
-        sim = nengo.Simulator(model)
+        sim = Simulator(model)
 
         answer_offset = p.answer_offset
         if p.backend == 'nengo_spinnaker':

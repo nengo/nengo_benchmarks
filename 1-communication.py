@@ -36,6 +36,10 @@ class CommunicationChannel(benchmark.Benchmark):
             pInput = nengo.Probe(input)
             pOutput = nengo.Probe(layers[-1], synapse=p.pstc)
 
+        import nengo_info
+        info = nengo_info.NengoInfo(model)
+        info.print_info()
+
         sim = Simulator(model, dt=p.dt)
         sim.run(p.T)
 
