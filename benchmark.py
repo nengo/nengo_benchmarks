@@ -53,6 +53,7 @@ class Benchmark(object):
             plt = matplotlib.pyplot
         else:
             plt = None
+
         result = self.benchmark(p, Simulator, rng, plt)
 
         text = []
@@ -63,14 +64,14 @@ class Benchmark(object):
 
         if plt is not None:
             plt.suptitle(self.filename.replace('#', '\n') +'\n' + text,
-                         fontsize=10)
+                         fontsize=8)
 
         fn = self.filename
         if not os.path.exists(p.subdir):
             os.mkdir(p.subdir)
         fn = os.path.join(p.subdir, fn)
         if not p.no_figs:
-            plt.savefig(fn + '.png')
+            plt.savefig(fn + '.png', dpi=300)
         if p.show_figs:
             plt.show()
 
