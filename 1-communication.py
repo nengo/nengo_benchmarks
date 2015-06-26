@@ -11,18 +11,16 @@ import numpy as np
 
 class CommunicationChannel(benchmark.Benchmark):
     def params(self):
-        return dict(
-            D=2,       # number of dimensions
-            L=2,       # number of layers
-            N=100,     # number of neurons per layer
-            pstc=0.01, # synaptic time constant
-            T=1.0,     # amount of time to run for
-        )
+        self.default('number of dimensions', D=2)
+        self.default('number of layers', L=2)
+        self.default('number of neurons per layer', N=100)
+        self.default('synaptic time constant', pstc=0.01)
+        self.default('simulation time', T=1.0)
 
-    def benchmark(self, p, Simulator, rng, plt):
-        model = nengo.Network(seed=p.seed)
+    def model(self, p):
+        model = nengo.Network()
         with model:
-            value = rng.randn(p.D)
+            value = np.random.randn(p.D)
             value /= np.linalg.norm(value)
 
             input = nengo.Node(value)
@@ -33,24 +31,27 @@ class CommunicationChannel(benchmark.Benchmark):
             for i in range(p.L-1):
                 nengo.Connection(layers[i], layers[i+1], synapse=p.pstc)
 
-            pInput = nengo.Probe(input)
-            pOutput = nengo.Probe(layers[-1], synapse=p.pstc)
+            self.pInput = nengo.Probe(input)
+            self.pOutput = nengo.Probe(layers[-1], synapse=p.pstc)
+        return model
 
-        sim = Simulator(model, dt=p.dt)
+
+    def evaluate(self, p, sim, plt):
         sim.run(p.T)
 
-        ideal = sim.data[pInput]
+        ideal = sim.data[self.pInput]
         for i in range(p.L):
             ideal = nengo.synapses.filt(ideal, nengo.Lowpass(p.pstc), p.dt)
 
-
         if plt is not None:
-            plt.plot(sim.trange(), sim.data[pOutput])
+            plt.plot(sim.trange(), sim.data[self.pOutput])
             plt.plot(sim.trange(), ideal)
             plt.ylim(-1,1)
 
-        rmse = np.sqrt(np.mean(sim.data[pOutput] - ideal)**2)
+        rmse = np.sqrt(np.mean(sim.data[self.pOutput] - ideal)**2)
         return dict(rmse=rmse)
 
 if __name__ == '__main__':
-    b = CommunicationChannel().run()
+    CommunicationChannel().run()
+elif __name__ == '__builtin__':
+    model = CommunicationChannel().make_model()

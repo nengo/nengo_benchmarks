@@ -9,52 +9,82 @@ import numpy as np
 
 class Benchmark(object):
     def __init__(self):
-        parser = argparse.ArgumentParser(description='Nengo benchmark')
-        parser.add_argument('--no_figs', action='store_true')
-        parser.add_argument('--show_figs', action='store_true')
-        parser.add_argument('--subdir', type=str, default='data')
-        parser.add_argument('--debug', action='store_true')
+        self.parser = argparse.ArgumentParser(
+                            description='Nengo benchmark: %s' %
+                                 self.__class__.__name__)
+        self.param_names = []
+        self.hidden_params = []
+        self.params()
+        self.fixed_params()
 
-        params = self.params()
+    def default(self, description, **kwarg):
+        if len(kwarg) != 1:
+            raise ValueException('Must specify exactly one parameter')
+        k, v = kwarg.items()[0]
+        if k in self.param_names:
+            raise ValueException('Cannot redefine parameter "%s"' % k)
+        if v is False:
+            self.parser.add_argument('--%s' % k, action='store_true',
+                                     help=description)
+        else:
+            self.parser.add_argument('--%s' % k, type=type(v), default=v,
+                                     help=description)
+        self.param_names.append(k)
 
-        if 'backend' not in params:
-            params['backend'] = 'nengo'
-        if 'seed' not in params:
-            params['seed'] = 1
-        if 'dt' not in params:
-            params['dt'] = 0.001
+    def fixed_params(self):
+        self.default('backend to use', backend='nengo')
+        self.default('time step', dt=0.001)
+        self.default('random number seed', seed=1)
+        self.default('data directory', data_dir='data')
+        self.default('display figures', show_figs=False)
+        self.default('do not generate figures', no_figs=False)
+        self.default('enable debug messages', debug=False)
+        self.hidden_params.extend(['data_dir', 'show_figs',
+                                   'no_figs', 'debug'])
 
-        for k, v in params.items():
-            parser.add_argument('--%s' % k, type=type(v), default=v)
-
-        args = parser.parse_args()
+    def process_args(self, allow_cmdline=True, **kwargs):
+        if len(kwargs) == 0 and allow_cmdline:
+            args = self.parser.parse_args()
+        else:
+            args = argparse.Namespace()
+            for k in self.param_names:
+                v = kwargs.get(k, self.parser.get_default(k))
+                setattr(args, k, v)
 
         name = self.__class__.__name__
         text = []
-        for k in sorted(params.keys()):
-            text.append('%s=%s' % (k, getattr(args, k)))
+        for k in self.param_names:
+            if k not in self.hidden_params:
+                text.append('%s=%s' % (k, getattr(args, k)))
 
-        self.filename = name + '#' + ','.join(text)
+        filename = name + '#' + ','.join(text)
 
-        self.param_settings = args
+        return args, filename
 
-    def run(self):
-        print('running %s' % self.filename)
-        p = self.param_settings
+    def make_model(self, **kwargs):
+        p, fn = self.process_args(allow_cmdline=False, **kwargs)
+        np.random.seed(p.seed)
+        model = self.model(p)
+        return model
 
+    def run(self, **kwargs):
+        p, fn = self.process_args(**kwargs)
         if p.debug:
             logging.basicConfig(level=logging.DEBUG)
         else:
             logging.basicConfig(level=logging.ERROR)
-        rng = np.random.RandomState(seed=p.seed)
+        print('running %s' % fn)
+        np.random.seed(p.seed)
+
+        model = self.model(p)
         module = importlib.import_module(p.backend)
         Simulator = module.Simulator
         if not p.no_figs or p.show_figs:
             plt = matplotlib.pyplot
         else:
             plt = None
-
-        result = self.benchmark(p, Simulator, rng, plt)
+        sim = Simulator(model, dt=p.dt)
+        result = self.evaluate(p, sim, plt)
 
         text = []
         for k, v in sorted(result.items()):
@@ -63,13 +93,12 @@ class Benchmark(object):
 
 
         if plt is not None:
-            plt.suptitle(self.filename.replace('#', '\n') +'\n' + text,
+            plt.suptitle(fn.replace('#', '\n') +'\n' + text,
                          fontsize=8)
 
-        fn = self.filename
-        if not os.path.exists(p.subdir):
-            os.mkdir(p.subdir)
-        fn = os.path.join(p.subdir, fn)
+        if not os.path.exists(p.data_dir):
+            os.mkdir(p.data_dir)
+        fn = os.path.join(p.data_dir, fn)
         if not p.no_figs:
             plt.savefig(fn + '.png', dpi=300)
         if p.show_figs:
