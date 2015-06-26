@@ -6,7 +6,6 @@ Output: the circular convolution of the inputs
 
 """
 
-
 import benchmark
 import nengo
 import nengo.spa as spa
@@ -14,14 +13,12 @@ import numpy as np
 
 class CircularConvolution(benchmark.Benchmark):
     def params(self):
-        return dict(
-            D=8,      # dimensionality
-            T=0.5,    # time to run the simulation for
-            SD=8,     # subdimensions
-            pstc=0.01 # synapse filter
-            )
-    def benchmark(self, p, Simulator, rng, plt):
-        model = spa.SPA(seed=p.seed)
+        self.default('dimensionality', D=8)
+        self.default('time to run simulation', T=0.5)
+        self.default('subdimensions', SD=8)
+        self.default('post-synaptic time constant', pstc=0.01)
+    def model(self, p):
+        model = spa.SPA()
         with model:
             model.inA = spa.Buffer(p.D, subdimensions=p.SD)
             model.inB = spa.Buffer(p.D, subdimensions=p.SD)
@@ -33,26 +30,30 @@ class CircularConvolution(benchmark.Benchmark):
 
             model.input = spa.Input(inA='A', inB='B')
 
-            probe = nengo.Probe(model.result.state.output, synapse=p.pstc)
+            self.probe = nengo.Probe(model.result.state.output, synapse=p.pstc)
 
             ideal = nengo.Node(model.get_output_vocab('inA').parse('A*B').v)
-            probe_ideal = nengo.Probe(ideal, synapse=None)
+            self.probe_ideal = nengo.Probe(ideal, synapse=None)
+        return model
 
-        sim = Simulator(model)
+    def evaluate(self, p, sim, plt):
         sim.run(p.T)
+        self.record_speed(p.T)
 
-        ideal = sim.data[probe_ideal]
+        ideal = sim.data[self.probe_ideal]
         for i in range(3):
-            ideal = nengo.synapses.filt(ideal, nengo.Lowpass(0.05), p.dt)
+            ideal = nengo.synapses.filt(ideal, nengo.Lowpass(p.pstc), p.dt)
 
 
         if plt is not None:
-            plt.plot(sim.trange(), sim.data[probe])
+            plt.plot(sim.trange(), sim.data[self.probe])
             plt.plot(sim.trange(), ideal)
 
 
-        rmse = np.sqrt(np.mean(sim.data[probe] - ideal)**2)
+        rmse = np.sqrt(np.mean(sim.data[self.probe] - ideal)**2)
         return dict(rmse=rmse)
 
 if __name__ == '__main__':
-    b = CircularConvolution().run()
+    CircularConvolution().run()
+elif __name__ == '__builtin__':
+    model = CircularConvolution().make_model()

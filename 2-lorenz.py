@@ -11,18 +11,17 @@ import numpy as np
 
 class Lorenz(benchmark.Benchmark):
     def params(self):
-        return dict(
-            N=2000,      # number of neurons
-            tau=0.1,     # post-synaptic time constant
-            sigma=10,    # Lorenz variables
-            beta=8.0/3,  # Lorenz variables
-            rho=28,      # Lorenz variables
-            T=10.0,      # time to run the simulation for
-        )
-    def benchmark(self, p, Simulator, rng, plt):
-        model = nengo.Network(seed=p.seed)
+        self.default('number of neurons', N=2000)
+        self.default('post-synaptic time constant', tau=0.1)
+        self.default('Lorenz variable', sigma=10.0)
+        self.default('Lorenz variable', beta=8.0/3)
+        self.default('Lorenz variable', rho=28.0)
+        self.default('time to run simulation', T=10.0)
+
+    def model(self, p):
+        model = nengo.Network()
         with model:
-            state = nengo.Ensemble(p.N, 3, radius=60)
+            state = nengo.Ensemble(p.N, 3, radius=30)
 
             def feedback(x):
                 dx0 = -p.sigma * x[0] + p.sigma * x[1]
@@ -33,19 +32,23 @@ class Lorenz(benchmark.Benchmark):
                         dx2 * p.tau + x[2]]
             nengo.Connection(state, state, function=feedback, synapse=p.tau)
 
-            pState = nengo.Probe(state, synapse=p.tau)
+            self.pState = nengo.Probe(state, synapse=p.tau)
+        return model
 
-        sim = Simulator(model, dt=p.dt)
+    def evaluate(self, p, sim, plt):
         sim.run(p.T)
+        self.record_speed(p.T)
 
         if plt is not None:
-            plt.plot(sim.trange(), sim.data[pState])
+            plt.plot(sim.trange(), sim.data[self.pState])
 
         return dict(
-            mean=np.mean(sim.data[pState], axis=0).mean(),
-            std=np.std(sim.data[pState], axis=0).mean(),
+            mean=np.mean(sim.data[self.pState], axis=0).mean(),
+            std=np.std(sim.data[self.pState], axis=0).mean(),
         )
 
 
 if __name__ == '__main__':
-    b = Lorenz().run()
+    Lorenz().run()
+elif __name__ == '__builtin__':
+    model = Lorenz().make_model(seed=1)

@@ -38,6 +38,7 @@ class CommunicationChannel(benchmark.Benchmark):
 
     def evaluate(self, p, sim, plt):
         sim.run(p.T)
+        self.record_speed(p.T)
 
         ideal = sim.data[self.pInput]
         for i in range(p.L):

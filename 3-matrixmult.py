@@ -12,18 +12,17 @@ import numpy as np
 
 class MatrixMultiply(benchmark.Benchmark):
     def params(self):
-        return dict(
-            D1=1,       # size of matrices
-            D2=2,       # size of matrices
-            D3=2,       # size of matrices
-            radius=1,   # All values must be between -radius and radius
-            N=50,       # number of neurons per input and output value
-            N_mult=200, # number of neurons to compute a pairwise product
-            pstc=0.01,  # post-synaptic time constant
-            T=0.5,      # time to run the simulation for
-        )
-    def benchmark(self, p, Simulator, rng, plt):
-        model = nengo.Network(seed=p.seed)
+        self.default('size of matrices', D1=1)
+        self.default('size of matrices', D2=2)
+        self.default('size of matrices', D3=2)
+        self.default('range of values', radius=1)
+        self.default('number of neurons for input&output', N=50)
+        self.default('number of neurons for pairwise multiply', N_mult=200)
+        self.default('post-synaptic time constant', pstc=0.01)
+        self.default('time to run simulation', T=0.5)
+
+    def model(self, p):
+        model = nengo.Network()
         inputA = np.random.uniform(-p.radius, p.radius, p.D1*p.D2)
         inputB = np.random.uniform(-p.radius, p.radius, p.D2*p.D3)
         answer = np.dot(inputA.reshape(p.D1, p.D2),
@@ -90,34 +89,38 @@ class MatrixMultiply(benchmark.Benchmark):
                              D.input[[i/p.D2 for i in range(p.D1*p.D2*p.D3)]],
                              synapse=p.pstc)
 
-            pA = nengo.Probe(A.output, synapse=p.pstc)
-            pB = nengo.Probe(B.output, synapse=p.pstc)
-            pD = nengo.Probe(D.output, synapse=p.pstc)
-            pIdeal = nengo.Probe(ideal, synapse=None)
+            self.pA = nengo.Probe(A.output, synapse=p.pstc)
+            self.pB = nengo.Probe(B.output, synapse=p.pstc)
+            self.pD = nengo.Probe(D.output, synapse=p.pstc)
+            self.pIdeal = nengo.Probe(ideal, synapse=None)
+        return model
 
-        sim = Simulator(model, dt=p.dt)
+    def evaluate(self, p, sim, plt):
         sim.run(p.T)
+        self.record_speed(p.T)
 
-        ideal = sim.data[pIdeal]
+        ideal = sim.data[self.pIdeal]
         for i in range(4):
             ideal = nengo.synapses.filt(ideal, nengo.Lowpass(p.pstc), p.dt)
 
         if plt is not None:
             plt.subplot(1,3,1)
-            plt.plot(sim.trange(), sim.data[pA])
+            plt.plot(sim.trange(), sim.data[self.pA])
             plt.ylim(-p.radius, p.radius)
             plt.subplot(1,3,2)
-            plt.plot(sim.trange(), sim.data[pB])
+            plt.plot(sim.trange(), sim.data[self.pB])
             plt.ylim(-p.radius, p.radius)
             plt.subplot(1,3,3)
-            plt.plot(sim.trange(), sim.data[pD])
+            plt.plot(sim.trange(), sim.data[self.pD])
             plt.plot(sim.trange(), ideal)
             plt.ylim(-p.radius, p.radius)
 
-        rmse = np.sqrt(np.mean(sim.data[pD] - ideal)**2)
+        rmse = np.sqrt(np.mean(sim.data[self.pD] - ideal)**2)
         return dict(rmse=rmse)
 
 
 
 if __name__ == '__main__':
-    b = MatrixMultiply().run()
+    MatrixMultiply().run()
+elif __name__ == '__builtin__':
+    model = MatrixMultiply().make_model()

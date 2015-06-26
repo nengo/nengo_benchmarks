@@ -2,6 +2,7 @@ import argparse
 import importlib
 import logging
 import os
+import time
 
 import matplotlib.pyplot
 import numpy as np
@@ -67,6 +68,10 @@ class Benchmark(object):
         model = self.model(p)
         return model
 
+    def record_speed(self, t):
+        now = time.time()
+        self.sim_speed = t / (now - self.start_time)
+
     def run(self, **kwargs):
         p, fn = self.process_args(**kwargs)
         if p.debug:
@@ -84,7 +89,12 @@ class Benchmark(object):
         else:
             plt = None
         sim = Simulator(model, dt=p.dt)
+        self.start_time = time.time()
+        self.sim_speed = None
         result = self.evaluate(p, sim, plt)
+
+        if self.sim_speed is not None and 'sim_speed' not in result:
+            result['sim_speed'] = self.sim_speed
 
         text = []
         for k, v in sorted(result.items()):
