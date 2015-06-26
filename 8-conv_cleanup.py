@@ -5,17 +5,14 @@ import numpy as np
 
 class ConvolutionCleanup(benchmark.Benchmark):
     def params(self):
-        return dict(
-            D=16,                  # dimensionality
-            mem_tau=0.1,           # memory time constant
-            mem_input_scale=0.5,   # input scaling on memory
-            test_time=10.0,        # amount of time to test memory for
-            test_present_time=0.1, # amount of time for one test
-            answer_offset=0.025,   # reaction time
-        )
+        self.default('dimensionality', D=16)
+        self.default('memory time constant', mem_tau=0.1)
+        self.default('input scaling on memory', mem_input_scale=0.5)
+        self.default('amount of time to test memory for', test_time=10.0)
+        self.default('amount of time per test', test_present_time=0.1)
 
-    def benchmark(self, p, Simulator, rng, plt):
-        model = spa.SPA(seed=p.seed)
+    def model(self, p):
+        model = spa.SPA()
         with model:
             model.shape = spa.Buffer(p.D)
             model.color = spa.Buffer(p.D)
@@ -59,6 +56,7 @@ class ConvolutionCleanup(benchmark.Benchmark):
                              model.clean_result.state.input)
 
             stim_time = p.mem_tau / p.mem_input_scale
+            self.stim_time = stim_time
             def stim_color(t):
                 if 0 < t < stim_time:
                     return 'BLUE'
@@ -88,40 +86,38 @@ class ConvolutionCleanup(benchmark.Benchmark):
                 query = stim_query,
                 )
 
-            probe = nengo.Probe(model.clean_result.state.output, synapse=0.02)
-            probe_wm = nengo.Probe(model.bound.state.output, synapse=0.02)
+            self.probe = nengo.Probe(model.clean_result.state.output,
+                                     synapse=0.02)
+            self.probe_wm = nengo.Probe(model.bound.state.output, synapse=0.02)
 
-        if p.backend == 'nengo_spinnaker':
-            import nengo_spinnaker
-            nengo_spinnaker.add_spinnaker_params(model.config)
-            for node in model.all_nodes:
-                if (node.size_in == 0 and
-                    node.size_out > 0 and
-                    callable(node.output)):
-                        model.config[node].function_of_time = True
-        sim = nengo.Simulator(model)
+        self.vocab = model.get_output_vocab('clean_result')
+        self.vocab_wm = model.get_output_vocab('bound')
+        return model
 
-        answer_offset = p.answer_offset
+    def evaluate(self, p, sim, plt):
+        stim_time = self.stim_time
+        T = stim_time * 2 + p.test_time
+        sim.run(T)
+        self.record_speed(T)
+
+        answer_offset = 0.025
         if p.backend == 'nengo_spinnaker':
             answer_offset += 0.010  # spinnaker has delays due to passthroughs
 
-        sim.run(stim_time * 2 + p.test_time)
-
-        if p.backend == 'nengo_spinnaker':
-            sim.close()
-
-        vocab = model.get_output_vocab('clean_result')
+        vocab = self.vocab
         vals = [None] * 4
-        vals[0] = np.dot(sim.data[probe], vocab.parse('CIRCLE').v)
-        vals[1] = np.dot(sim.data[probe], vocab.parse('SQUARE').v)
-        vals[2] = np.dot(sim.data[probe], vocab.parse('BLUE').v)
-        vals[3] = np.dot(sim.data[probe], vocab.parse('RED').v)
+        vals[0] = np.dot(sim.data[self.probe], vocab.parse('CIRCLE').v)
+        vals[1] = np.dot(sim.data[self.probe], vocab.parse('SQUARE').v)
+        vals[2] = np.dot(sim.data[self.probe], vocab.parse('BLUE').v)
+        vals[3] = np.dot(sim.data[self.probe], vocab.parse('RED').v)
         vals = np.array(vals)
 
-        vocab_wm = model.get_output_vocab('bound')
+        vocab_wm = self.vocab_wm
         vals_wm = [None] * 2
-        vals_wm[0] = np.dot(sim.data[probe_wm], vocab.parse('BLUE*CIRCLE').v)
-        vals_wm[1] = np.dot(sim.data[probe_wm], vocab.parse('RED*SQUARE').v)
+        vals_wm[0] = np.dot(sim.data[self.probe_wm],
+                            vocab_wm.parse('BLUE*CIRCLE').v)
+        vals_wm[1] = np.dot(sim.data[self.probe_wm],
+                            vocab_wm.parse('RED*SQUARE').v)
         vals_wm = np.array(vals_wm)
 
         correct = np.zeros_like(vals)
@@ -143,4 +139,6 @@ class ConvolutionCleanup(benchmark.Benchmark):
         return dict(rmse=rmse)
 
 if __name__ == '__main__':
-    b = ConvolutionCleanup().run()
+    ConvolutionCleanup().run()
+elif __name__ == '__builtin__':
+    model = ConvolutionCleanup().make_model()

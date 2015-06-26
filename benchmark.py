@@ -84,6 +84,16 @@ class Benchmark(object):
         model = self.model(p)
         module = importlib.import_module(p.backend)
         Simulator = module.Simulator
+
+        if p.backend == 'nengo_spinnaker':
+            import nengo_spinnaker
+            nengo_spinnaker.add_spinnaker_params(model.config)
+            for node in model.all_nodes:
+                if (node.size_in == 0 and
+                    node.size_out > 0 and
+                    callable(node.output)):
+                        model.config[node].function_of_time = True
+
         if not p.no_figs or p.show_figs:
             plt = matplotlib.pyplot
         else:
@@ -92,6 +102,9 @@ class Benchmark(object):
         self.start_time = time.time()
         self.sim_speed = None
         result = self.evaluate(p, sim, plt)
+
+        if p.backend == 'nengo_spinnaker':
+            sim.close()
 
         if self.sim_speed is not None and 'sim_speed' not in result:
             result['sim_speed'] = self.sim_speed
