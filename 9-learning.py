@@ -3,22 +3,20 @@ import benchmark
 
 import nengo
 import numpy as np
-import time
 
 
 class LearningSpeedup(benchmark.Benchmark):
     def params(self):
-        return dict(
-            D=1,
-            n_neurons=100,
-            tau_slow=0.2,
-            tau_fast=0.01,
-            T=40.0,
-            n_switches=2,
-            learn_rate=1.0,
-        )
-    def benchmark(self, p, Simulator, rng, plt):
-        model = nengo.Network(seed=p.seed)
+        self.default('dimensionality', D=1)
+        self.default('number of neurons', n_neurons=100)
+        self.default('slow path time constant', tau_slow=0.2)
+        self.default('fast path time constant', tau_fast=0.01)
+        self.default('time to simulate for', T=40.0)
+        self.default('number of time to change function', n_switches=2)
+        self.default('learning rate', learn_rate=1.0)
+
+    def model(self, p):
+        model = nengo.Network()
 
         with model:
             def stim(t):
@@ -52,35 +50,34 @@ class LearningSpeedup(benchmark.Benchmark):
 
             nengo.Connection(error, conn.learning_rule)
 
-            probe_target = nengo.Probe(target, synapse=p.tau_fast)
-            probe_post = nengo.Probe(post, synapse=p.tau_fast)
-            probe_pre = nengo.Probe(pre_value, synapse=None)
-            probe_context = nengo.Probe(context, synapse=None)
+            self.probe_target = nengo.Probe(target, synapse=p.tau_fast)
+            self.probe_post = nengo.Probe(post, synapse=p.tau_fast)
+            self.probe_pre = nengo.Probe(pre_value, synapse=None)
+            self.probe_context = nengo.Probe(context, synapse=None)
+        return model
 
-        time_start = time.time()
-        sim = Simulator(model, dt=p.dt)
-        time_built = time.time()
+    def evaluate(self, p, sim, plt):
         sim.run(p.T)
-        time_ran = time.time()
+        self.record_speed(p.T)
 
-        ideal = sim.data[probe_pre] * sim.data[probe_context]
+        ideal = sim.data[self.probe_pre] * sim.data[self.probe_context]
         for i in range(2):
             ideal = nengo.synapses.filt(ideal, nengo.Lowpass(p.tau_fast), p.dt)
 
 
         if plt is not None:
             plt.subplot(2, 1, 1)
-            plt.plot(sim.trange(), sim.data[probe_target])
+            plt.plot(sim.trange(), sim.data[self.probe_target])
             plt.plot(sim.trange(), ideal)
             plt.subplot(2, 1, 2)
-            plt.plot(sim.trange(), sim.data[probe_post])
+            plt.plot(sim.trange(), sim.data[self.probe_post])
             plt.plot(sim.trange(), ideal)
 
-        rmse = np.sqrt(np.mean(sim.data[probe_post] - ideal)**2)
-        return dict(rmse=rmse,
-                    time_build=time_built - time_start,
-                    rate=p.T / (time_ran - time_built))
+        rmse = np.sqrt(np.mean(sim.data[self.probe_post] - ideal)**2)
+        return dict(rmse=rmse)
 
 
 if __name__ == '__main__':
-    b = LearningSpeedup().run()
+    LearningSpeedup().run()
+elif __name__ == '__builtin__':
+    model = LearningSpeedup().make_model()
