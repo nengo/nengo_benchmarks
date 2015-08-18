@@ -29,16 +29,16 @@ class MatrixMultiply(benchmark.Benchmark):
                         inputB.reshape(p.D2, p.D3)).flatten()
 
         with model:
-            inA = nengo.Node(inputA)
-            inB = nengo.Node(inputB)
-            ideal = nengo.Node(answer)
+            inA = nengo.Node(inputA, label='inA')
+            inB = nengo.Node(inputB, label='inB')
+            ideal = nengo.Node(answer, label='ideal')
 
             A = nengo.networks.EnsembleArray(p.N, n_ensembles=p.D1*p.D2,
-                                             radius=p.radius)
+                                             radius=p.radius, label='A')
             B = nengo.networks.EnsembleArray(p.N, n_ensembles=p.D2*p.D3,
-                                             radius=p.radius)
+                                             radius=p.radius, label='B')
             D = nengo.networks.EnsembleArray(p.N, n_ensembles=p.D1*p.D3,
-                                             radius=p.radius)
+                                             radius=p.radius, label='D')
 
             encoders = nengo.dists.Choice([[1,1],[1,-1],[-1,1],[-1,-1]])
 
@@ -46,6 +46,7 @@ class MatrixMultiply(benchmark.Benchmark):
             #  need to compute D1*D2*D3 products to multiply 2 matrices together
             C = nengo.networks.EnsembleArray(p.N_mult,
                     n_ensembles=p.D1*p.D2*p.D3,
+                    label='C',
                     radius=1.5*p.radius, ens_dimensions=2, encoders=encoders)
 
             nengo.Connection(inA, A.input, synapse=p.pstc)
