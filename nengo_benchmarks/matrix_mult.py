@@ -6,20 +6,20 @@ Output: a D1xD3 matrix that is the product of the two inputs
 
 """
 
-import benchmark
+import pytry
 import nengo
 import numpy as np
 
-class MatrixMultiply(benchmark.Benchmark):
+class MatrixMultiply(pytry.NengoTrial):
     def params(self):
-        self.default('size of matrices', D1=1)
-        self.default('size of matrices', D2=2)
-        self.default('size of matrices', D3=2)
-        self.default('range of values', radius=1)
-        self.default('number of neurons for input&output', N=50)
-        self.default('number of neurons for pairwise multiply', N_mult=200)
-        self.default('post-synaptic time constant', pstc=0.01)
-        self.default('time to run simulation', T=0.5)
+        self.param('size of matrices', D1=1)
+        self.param('size of matrices', D2=2)
+        self.param('size of matrices', D3=2)
+        self.param('range of values', radius=1)
+        self.param('number of neurons for input&output', N=50)
+        self.param('number of neurons for pairwise multiply', N_mult=200)
+        self.param('post-synaptic time constant', pstc=0.01)
+        self.param('time to run simulation', T=0.5)
 
     def model(self, p):
         model = nengo.Network()
@@ -68,8 +68,8 @@ class MatrixMultiply(benchmark.Benchmark):
             for i in range(p.D1):
                 for j in range(p.D2):
                     for k in range(p.D3):
-                        transformA[(j + k*p.D2 + i*p.D2*p.D3)*2][j + i*p.D2] = 1
-                        transformB[(j + k*p.D2 + i*p.D2*p.D3)*2 + 1][k + j*p.D3] = 1
+                        transformA[(j+k*p.D2+i*p.D2*p.D3)*2][j+i*p.D2] = 1
+                        transformB[(j+k*p.D2+i*p.D2*p.D3)*2+1][k+j*p.D3] = 1
 
             nengo.Connection(A.output, C.input, transform=transformA,
                         synapse=p.pstc)
@@ -98,11 +98,10 @@ class MatrixMultiply(benchmark.Benchmark):
 
     def evaluate(self, p, sim, plt):
         sim.run(p.T)
-        self.record_speed(p.T)
 
         ideal = sim.data[self.pIdeal]
         for i in range(4):
-            ideal = nengo.synapses.filt(ideal, nengo.Lowpass(p.pstc), p.dt)
+            ideal = nengo.Lowpass(p.pstc).filt(ideal, dt=p.dt, y0=0)
 
         if plt is not None:
             plt.subplot(1,3,1)
@@ -116,12 +115,5 @@ class MatrixMultiply(benchmark.Benchmark):
             plt.plot(sim.trange(), ideal)
             plt.ylim(-p.radius, p.radius)
 
-        rmse = np.sqrt(np.mean(sim.data[self.pD] - ideal)**2)
+        rmse = np.sqrt(np.mean((sim.data[self.pD] - ideal)**2))
         return dict(rmse=rmse)
-
-
-
-if __name__ == '__main__':
-    MatrixMultiply().run()
-elif __name__ == '__builtin__':
-    model = MatrixMultiply().make_model()

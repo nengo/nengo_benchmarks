@@ -1,19 +1,19 @@
 
-import benchmark
+import pytry
 
 import nengo
 import numpy as np
 
 
-class LearningSpeedup(benchmark.Benchmark):
+class LearningSpeedup(pytry.NengoTrial):
     def params(self):
-        self.default('dimensionality', D=1)
-        self.default('number of neurons', n_neurons=100)
-        self.default('slow path time constant', tau_slow=0.2)
-        self.default('fast path time constant', tau_fast=0.01)
-        self.default('time to simulate for', T=40.0)
-        self.default('number of time to change function', n_switches=2)
-        self.default('learning rate', learn_rate=1.0)
+        self.param('dimensionality', D=1)
+        self.param('number of neurons', n_neurons=100)
+        self.param('slow path time constant', tau_slow=0.2)
+        self.param('fast path time constant', tau_fast=0.01)
+        self.param('time to simulate for', T=40.0)
+        self.param('number of time to change function', n_switches=2)
+        self.param('learning rate', learn_rate=1e-4)
 
     def model(self, p):
         model = nengo.Network()
@@ -29,9 +29,8 @@ class LearningSpeedup(benchmark.Benchmark):
             nengo.Connection(pre_value, pre, synapse=None)
 
             conn = nengo.Connection(pre, post,
-                        function=lambda x: np.random.random(size=p.D),
-                        learning_rule_type=nengo.PES())
-            conn.learning_rule_type.learning_rate *= p.learn_rate
+                      function=lambda x: np.random.random(size=p.D),
+                      learning_rule_type=nengo.PES(learning_rate=p.learn_rate))
 
             slow = nengo.networks.Product(p.n_neurons*2, p.D)
             T_context = p.T / p.n_switches
@@ -58,7 +57,6 @@ class LearningSpeedup(benchmark.Benchmark):
 
     def evaluate(self, p, sim, plt):
         sim.run(p.T)
-        self.record_speed(p.T)
 
         ideal = sim.data[self.probe_pre] * sim.data[self.probe_context]
         for i in range(2):
@@ -73,11 +71,5 @@ class LearningSpeedup(benchmark.Benchmark):
             plt.plot(sim.trange(), sim.data[self.probe_post])
             plt.plot(sim.trange(), ideal)
 
-        rmse = np.sqrt(np.mean(sim.data[self.probe_post] - ideal)**2)
+        rmse = np.sqrt(np.mean((sim.data[self.probe_post] - ideal)**2))
         return dict(rmse=rmse)
-
-
-if __name__ == '__main__':
-    LearningSpeedup().run()
-elif __name__ == '__builtin__':
-    model = LearningSpeedup().make_model()

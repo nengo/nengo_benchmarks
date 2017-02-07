@@ -1,15 +1,15 @@
-import benchmark
+import pytry
 import nengo
 import nengo.spa as spa
 import numpy as np
 
-class ConvolutionCleanup(benchmark.Benchmark):
+class ConvolutionCleanup(pytry.NengoTrial):
     def params(self):
-        self.default('dimensionality', D=16)
-        self.default('memory time constant', mem_tau=0.1)
-        self.default('input scaling on memory', mem_input_scale=0.5)
-        self.default('amount of time to test memory for', test_time=10.0)
-        self.default('amount of time per test', test_present_time=0.1)
+        self.param('dimensionality', D=16)
+        self.param('memory time constant', mem_tau=0.1)
+        self.param('input scaling on memory', mem_input_scale=0.5)
+        self.param('amount of time to test memory for', test_time=2.0)
+        self.param('amount of time per test', test_present_time=0.1)
 
     def model(self, p):
         model = spa.SPA()
@@ -43,11 +43,8 @@ class ConvolutionCleanup(benchmark.Benchmark):
                                 synapse=p.mem_tau)
 
             vocab = model.get_output_vocab('result')
-            model.cleanup = spa.AssociativeMemory([
-                vocab.parse('RED').v,
-                vocab.parse('BLUE').v,
-                vocab.parse('CIRCLE').v,
-                vocab.parse('SQUARE').v])
+            vocab.parse('RED+BLUE+CIRCLE+SQUARE')
+            model.cleanup = spa.AssociativeMemory(vocab)
 
             model.clean_result = spa.Buffer(p.D)
 
@@ -98,11 +95,8 @@ class ConvolutionCleanup(benchmark.Benchmark):
         stim_time = self.stim_time
         T = stim_time * 2 + p.test_time
         sim.run(T)
-        self.record_speed(T)
 
         answer_offset = 0.025
-        if p.backend == 'nengo_spinnaker':
-            answer_offset += 0.010  # spinnaker has delays due to passthroughs
 
         vocab = self.vocab
         vals = [None] * 4
@@ -137,8 +131,3 @@ class ConvolutionCleanup(benchmark.Benchmark):
             plt.plot(sim.trange(), vals_wm.T)
 
         return dict(rmse=rmse)
-
-if __name__ == '__main__':
-    ConvolutionCleanup().run()
-elif __name__ == '__builtin__':
-    model = ConvolutionCleanup().make_model()
