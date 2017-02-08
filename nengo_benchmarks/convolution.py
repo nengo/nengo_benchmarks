@@ -51,11 +51,14 @@ class CircularConvolution(pytry.NengoTrial):
         for i in range(3):
             ideal = nengo.Lowpass(p.pstc).filt(ideal, dt=p.dt, y0=0)
 
+        # compute where to check results from
+        index = int(p.pstc*3*4 / p.dt)
 
         if plt is not None:
             plt.plot(sim.trange(), sim.data[self.probe])
-            plt.plot(sim.trange(), ideal)
+            plt.gca().set_color_cycle(None)
+            plt.plot(sim.trange(), ideal, ls='--')
+            plt.axvline(index*p.dt, c='#aaaaaa')
 
-
-        rmse = np.sqrt(np.mean((sim.data[self.probe] - ideal)**2))
+        rmse = np.sqrt(np.mean((sim.data[self.probe][index:]-ideal[index:])**2))
         return dict(rmse=rmse)
