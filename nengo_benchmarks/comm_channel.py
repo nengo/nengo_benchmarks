@@ -45,7 +45,8 @@ class CommunicationChannel(pytry.NengoTrial):
 
         if plt is not None:
             plt.plot(sim.trange(), sim.data[self.pOutput])
-            plt.plot(sim.trange(), ideal)
+            plt.gca().set_color_cycle(None)
+            plt.plot(sim.trange(), ideal, ls='--')
             plt.ylim(-1, 1)
 
         rmse = np.sqrt(np.mean((sim.data[self.pOutput] - ideal)**2))
