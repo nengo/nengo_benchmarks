@@ -53,9 +53,9 @@ class SPASequence(pytry.NengoTrial):
             plt.plot(sim.trange(), sim.data[self.probe])
             plt.plot(sim.trange()[index + 1:], np.where(change!=0,1,0))
             for i, peak in enumerate(peaks):
-                plt.axhline(peak, p.dt*(change_points[i] + index),
-                            p.dt*(change_points[i+1] + index))
-
+                plt.plot([p.dt*(change_points[i]+index), 
+                          p.dt*(change_points[i+1]+index)],
+                         [peak, peak], color='b')
 
         return dict(period=np.mean(intervals), period_sd=np.std(intervals),
                     peak=np.mean(peaks), peak_sd=np.std(peaks))
