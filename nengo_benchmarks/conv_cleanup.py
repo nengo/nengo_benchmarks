@@ -74,7 +74,7 @@ class ConvolutionCleanup(pytry.NengoTrial):
                 if t < stim_time*2:
                     return '0'
                 else:
-                    index = int((t - stim_time) / p.test_present_time)
+                    index = int((t - stim_time*2) / p.test_present_time)
                     return ['BLUE', 'RED', 'CIRCLE', 'SQUARE'][index % 4]
 
             model.input = spa.Input(
@@ -96,8 +96,6 @@ class ConvolutionCleanup(pytry.NengoTrial):
         T = stim_time * 2 + p.test_time
         sim.run(T)
 
-        answer_offset = 0.025
-
         vocab = self.vocab
         vals = [None] * 4
         vals[0] = np.dot(sim.data[self.probe], vocab.parse('CIRCLE').v)
@@ -114,20 +112,26 @@ class ConvolutionCleanup(pytry.NengoTrial):
                             vocab_wm.parse('RED*SQUARE').v)
         vals_wm = np.array(vals_wm)
 
-        correct = np.zeros_like(vals)
-        for i, t in enumerate(sim.trange()):
-            if t > stim_time * 2 + answer_offset:
-                index = int((t - stim_time * 2 - answer_offset) /
-                            p.test_present_time)
-                correct[index % 4, i] = 1.0
+        times = []
+        recall_strength = []
+        index = 0
+        t = stim_time * 2 + p.test_present_time
+        while t < T:
+            i = int(t / p.dt) - 1
+            v = vals[index, i]
+            recall_strength.append(v)
+            index = (index + 1) % 4
+            times.append(t)
+            t += p.test_present_time
 
-        rmse = np.sqrt(np.mean((vals - correct).flatten()**2))
 
         if plt is not None:
             plt.subplot(2,1,1)
             plt.plot(sim.trange(), vals.T)
-            plt.plot(sim.trange(), correct.T)
+            plt.legend(['CIRCLE', 'SQUARE', 'BLUE' ,'RED'], loc='best')
+            for t in times:
+                plt.axvline(t)
             plt.subplot(2,1,2)
             plt.plot(sim.trange(), vals_wm.T)
 
-        return dict(rmse=rmse)
+        return dict(mean_recall_strength=np.mean(recall_strength))
