@@ -68,5 +68,5 @@ class SPASequenceRouted(pytry.NengoTrial):
         return dict(period=np.mean(seq_intervals),
                     period_sd=np.std(seq_intervals),
                     route_period=np.mean(route_intervals),
-                    route_period_sp=np.std(route_intervals),
+                    route_period_sd=np.std(route_intervals),
                     peak=np.mean(peaks), peak_sd=np.std(peaks))
