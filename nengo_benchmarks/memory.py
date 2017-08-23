@@ -10,6 +10,7 @@ import nengo
 import nengo.spa as spa
 
 import pytry
+import timeit
 
 class SemanticMemory(pytry.NengoTrial):
     def params(self):
@@ -50,7 +51,10 @@ class SemanticMemory(pytry.NengoTrial):
 
     def evaluate(self, p, sim, plt):
         T = p.T + p.time_per_symbol * p.n_symbols
+        start = timeit.default_timer()
         sim.run(T)
+        end = timeit.default_timer()
+        speed = T / (end - start)
 
         pairs = np.zeros((p.n_symbols, p.D), dtype=float)
         for i in range(p.n_symbols):
@@ -67,4 +71,5 @@ class SemanticMemory(pytry.NengoTrial):
             plt.plot(sim.trange(), memory)
 
 
-        return dict(memory = mean_memory)
+        return dict(memory = mean_memory,
+                    speed=speed)

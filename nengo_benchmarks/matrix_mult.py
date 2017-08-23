@@ -9,6 +9,7 @@ Output: a D1xD3 matrix that is the product of the two inputs
 import pytry
 import nengo
 import numpy as np
+import timeit
 
 class MatrixMultiply(pytry.NengoTrial):
     def params(self):
@@ -97,7 +98,10 @@ class MatrixMultiply(pytry.NengoTrial):
         return model
 
     def evaluate(self, p, sim, plt):
+        start = timeit.default_timer()
         sim.run(p.T)
+        end = timeit.default_timer()
+        speed = p.T / (end - start)
 
         ideal = sim.data[self.pIdeal]
         for i in range(4):
@@ -116,4 +120,4 @@ class MatrixMultiply(pytry.NengoTrial):
             plt.ylim(-p.radius, p.radius)
 
         rmse = np.sqrt(np.mean((sim.data[self.pD] - ideal)**2))
-        return dict(rmse=rmse)
+        return dict(rmse=rmse, speed=speed)

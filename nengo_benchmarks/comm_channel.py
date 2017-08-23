@@ -8,6 +8,7 @@ Ouput: the same value as the input
 import nengo
 import numpy as np
 import pytry
+import timeit
 
 class CommunicationChannel(pytry.NengoTrial):
     def params(self):
@@ -37,7 +38,10 @@ class CommunicationChannel(pytry.NengoTrial):
 
 
     def evaluate(self, p, sim, plt):
+        start = timeit.default_timer()
         sim.run(p.T)
+        end = timeit.default_timer()
+        speed = p.T / (end - start)
 
         ideal = sim.data[self.pInput]
         for i in range(p.L):
@@ -50,4 +54,4 @@ class CommunicationChannel(pytry.NengoTrial):
             plt.ylim(-1, 1)
 
         rmse = np.sqrt(np.mean((sim.data[self.pOutput] - ideal)**2))
-        return dict(rmse=rmse)
+        return dict(rmse=rmse, speed=speed)

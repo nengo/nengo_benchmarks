@@ -9,6 +9,7 @@ The final score is the mean normalized dot product between the FFTs.
 import nengo
 import numpy as np
 import pytry
+import timeit
 
 class Oscillator(pytry.NengoTrial):
     def params(self):
@@ -52,7 +53,11 @@ class Oscillator(pytry.NengoTrial):
         return model
 
     def evaluate(self, p, sim, plt):
-        sim.run(p.T * p.n_freq)
+        T = p.T * p.n_freq
+        start = timeit.default_timer()
+        sim.run(T)
+        end = timeit.default_timer()
+        speed = T / (end - start)
 
         data = sim.data[self.p_state][:, 1]
 
@@ -100,4 +105,5 @@ class Oscillator(pytry.NengoTrial):
                          loc='best', prop={'size': 8})
 
         return dict(scores=score,
-                    mean_score=np.mean(score))
+                    mean_score=np.mean(score),
+                    speed=speed)

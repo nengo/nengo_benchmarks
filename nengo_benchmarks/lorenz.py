@@ -8,6 +8,7 @@ Ouput: the 3 state variables for the classic Lorenz attractor
 import pytry
 import nengo
 import numpy as np
+import timeit
 
 class Lorenz(pytry.NengoTrial):
     def params(self):
@@ -36,7 +37,10 @@ class Lorenz(pytry.NengoTrial):
         return model
 
     def evaluate(self, p, sim, plt):
+        start = timeit.default_timer()
         sim.run(p.T)
+        end = timeit.default_timer()
+        speed = p.T / (end - start)
 
         if plt is not None:
             plt.plot(sim.trange(), sim.data[self.pState])
@@ -44,4 +48,5 @@ class Lorenz(pytry.NengoTrial):
         return dict(
             mean=np.mean(sim.data[self.pState], axis=0).mean(),
             std=np.std(sim.data[self.pState], axis=0).mean(),
+            speed=speed,
         )

@@ -10,6 +10,7 @@ import pytry
 import nengo
 import nengo.spa as spa
 import numpy as np
+import timeit
 
 class CircularConvolution(pytry.NengoTrial):
     def params(self):
@@ -45,7 +46,10 @@ class CircularConvolution(pytry.NengoTrial):
         return model
 
     def evaluate(self, p, sim, plt):
+        start = timeit.default_timer()
         sim.run(p.T)
+        end = timeit.default_timer()
+        speed = p.T / (end - start)
 
         ideal = sim.data[self.probe_ideal]
         for i in range(3):
@@ -61,4 +65,4 @@ class CircularConvolution(pytry.NengoTrial):
             plt.axvline(index*p.dt, c='#aaaaaa')
 
         rmse = np.sqrt(np.mean((sim.data[self.probe][index:]-ideal[index:])**2))
-        return dict(rmse=rmse)
+        return dict(rmse=rmse, speed=speed)

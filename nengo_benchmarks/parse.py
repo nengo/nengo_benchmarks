@@ -9,6 +9,7 @@ import numpy as np
 import nengo
 import nengo.spa as spa
 import pytry
+import timeit
 
 class Parsing(pytry.NengoTrial):
     def params(self):
@@ -49,7 +50,10 @@ class Parsing(pytry.NengoTrial):
         return model
     def evaluate(self, p, sim, plt):
         T = p.time_per_word * 3
+        start = timeit.default_timer()
         sim.run(T)
+        end = timeit.default_timer()
+        speed = T / (end - start)
 
         data = self.motor_vocab.dot(sim.data[self.p_motor].T).T
         mean = np.mean(data[int(p.time_per_word*2.5/p.dt):], axis=0)
@@ -67,4 +71,5 @@ class Parsing(pytry.NengoTrial):
             plt.plot(sim.trange(), data[:,correct_index], lw=2)
 
         return dict(mag_correct=mag_correct, mag_others=mag_others,
-                    mag_second=mag_second)
+                    mag_second=mag_second,
+                    speed=speed)

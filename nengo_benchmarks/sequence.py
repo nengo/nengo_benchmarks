@@ -10,6 +10,7 @@ import pytry
 import numpy as np
 import nengo
 import nengo.spa as spa
+import timeit
 
 class SPASequence(pytry.NengoTrial):
     def params(self):
@@ -37,7 +38,10 @@ class SPASequence(pytry.NengoTrial):
         return model
 
     def evaluate(self, p, sim, plt):
+        start = timeit.default_timer()
         sim.run(p.T)
+        end = timeit.default_timer()
+        speed = p.T / (end - start)
 
         index = int(0.05 / p.dt)  # ignore the first 50ms
         best = np.argmax(sim.data[self.probe][index:], axis=1)
@@ -58,4 +62,5 @@ class SPASequence(pytry.NengoTrial):
                          [peak, peak], color='b')
 
         return dict(period=np.mean(intervals), period_sd=np.std(intervals),
-                    peak=np.mean(peaks), peak_sd=np.std(peaks))
+                    peak=np.mean(peaks), peak_sd=np.std(peaks),
+                    speed=speed)

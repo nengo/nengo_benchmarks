@@ -3,6 +3,7 @@ import pytry
 
 import nengo
 import numpy as np
+import timeit
 
 
 class LearningSpeedup(pytry.NengoTrial):
@@ -56,7 +57,10 @@ class LearningSpeedup(pytry.NengoTrial):
         return model
 
     def evaluate(self, p, sim, plt):
+        start = timeit.default_timer()
         sim.run(p.T)
+        end = timeit.default_timer()
+        speed = p.T / (end - start)
 
         ideal = sim.data[self.probe_pre] * sim.data[self.probe_context]
         for i in range(2):
@@ -72,4 +76,4 @@ class LearningSpeedup(pytry.NengoTrial):
             plt.plot(sim.trange(), ideal)
 
         rmse = np.sqrt(np.mean((sim.data[self.probe_post] - ideal)**2))
-        return dict(rmse=rmse)
+        return dict(rmse=rmse, speed=speed)

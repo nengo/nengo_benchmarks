@@ -1,6 +1,7 @@
 import nengo
 import pytry
 import numpy as np
+import timeit
 
 class InhibitionTrial(pytry.NengoTrial):
     def params(self):
@@ -28,7 +29,10 @@ class InhibitionTrial(pytry.NengoTrial):
         return model
 
     def evaluate(self, p, sim, plt):
+        start = timeit.default_timer()
         sim.run(p.T)
+        end = timeit.default_timer()
+        speed = p.T / (end - start)
 
         data = sim.data[self.p_ens]
 
@@ -47,4 +51,5 @@ class InhibitionTrial(pytry.NengoTrial):
                 plt.axvline(t)
             plt.axhline(0.05, linestyle='--', c='k')
 
-        return dict(time_to_inhibit=np.mean(time_to_inhibit))
+        return dict(time_to_inhibit=np.mean(time_to_inhibit),
+                    speed=speed)

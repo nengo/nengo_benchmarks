@@ -2,6 +2,7 @@ import pytry
 import nengo
 import nengo.spa as spa
 import numpy as np
+import timeit
 
 class ConvolutionCleanup(pytry.NengoTrial):
     def params(self):
@@ -94,7 +95,10 @@ class ConvolutionCleanup(pytry.NengoTrial):
     def evaluate(self, p, sim, plt):
         stim_time = self.stim_time
         T = stim_time * 2 + p.test_time
+        start = timeit.default_timer()
         sim.run(T)
+        end = timeit.default_timer()
+        speed = T / (end - start)
 
         vocab = self.vocab
         vals = [None] * 4
@@ -134,4 +138,5 @@ class ConvolutionCleanup(pytry.NengoTrial):
             plt.subplot(2,1,2)
             plt.plot(sim.trange(), vals_wm.T)
 
-        return dict(mean_recall_strength=np.mean(recall_strength))
+        return dict(mean_recall_strength=np.mean(recall_strength),
+                    speed=speed)
