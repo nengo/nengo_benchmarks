@@ -44,7 +44,7 @@ class MNIST(pytry.NengoTrial):
                                  intercepts=nengo.dists.CosineSimilarity(784+2))
             
             def result_func(t, raw, correct=y[p.n_training:]):
-                index = int(t / p.t_image)
+                index = int((t-p.dt) / p.t_image)
                 c = np.argmax(correct[index])
                 r = np.argmax(raw)
                 return np.hstack([raw, c, r])
@@ -73,8 +73,8 @@ class MNIST(pytry.NengoTrial):
         count = np.zeros(10, dtype=int)
         times = sim.trange()
         for i in range(p.n_testing):
-            t = (i + 0.9) * p.t_image
-            index = np.argmax(times >= t)
+            t = (i + 1) * p.t_image
+            index = np.argmax(times >= t) - 1
             count[correct[index]] += 1
             confusion[correct[index],result[index]] += 1
 
