@@ -18,6 +18,11 @@ class MNIST(pytry.NengoTrial):
         self.param('training samples', n_training=5000)
         self.param('testing samples', n_testing=100)
         self.param('output synapse', synapse=0.02)
+        self.param('use Gabor encoders', use_gabor=False)
+        self.param('iterations of backprop to run', n_backprop=0)
+        self.param('learning rate', learning_rate=1e-3)
+        self.param('iterations of feedback alignment to run', n_feedback=0)
+
 
     def model(self, p):
         mnist = sklearn.datasets.fetch_mldata('MNIST original')
@@ -40,7 +45,15 @@ class MNIST(pytry.NengoTrial):
                 return data[index % len(data)]
             stim = nengo.Node(stim_func)
 
+            if p.use_gabor:
+                from nengo_extras.vision import Gabor, Mask
+                encoders = Gabor().generate(p.n_neurons, (11, 11))
+                encoders = Mask((28, 28)).populate(encoders, flatten=True)
+            else:
+                encoders = nengo.dists.UniformHypersphere(surface=True)
+
             ens = nengo.Ensemble(n_neurons=p.n_neurons, dimensions=784,
+                                 encoders=encoders,
                                  intercepts=nengo.dists.CosineSimilarity(784+2))
             
             def result_func(t, raw, correct=y[p.n_training:]):
@@ -51,12 +64,25 @@ class MNIST(pytry.NengoTrial):
             result = nengo.Node(result_func, size_in=10)
 
             nengo.Connection(stim, ens, synapse=None)
-            nengo.Connection(ens, result, 
-                             eval_points=x[:p.n_training], 
-                             function=y[:p.n_training],
-                             synapse=p.synapse)
+            c = nengo.Connection(ens, result, 
+                                 eval_points=x[:p.n_training], 
+                                 function=y[:p.n_training],
+                                 synapse=p.synapse)
 
             self.p_output = nengo.Probe(result)
+
+        if p.n_backprop > 0:
+            import nengo_encoder_learning as nel
+            nel.improve(c, backprop=True,
+                        learning_rate=p.learning_rate, 
+                        steps=p.n_backprop,
+                        seed=np.random.randint(0x7FFFFFFF))
+        if p.n_feedback > 0:
+            import nengo_encoder_learning as nel
+            nel.improve(c, backprop=False,
+                        learning_rate=p.learning_rate, 
+                        steps=p.n_feedback,
+                        seed=np.random.randint(0x7FFFFFFF))
         return model
 
 
