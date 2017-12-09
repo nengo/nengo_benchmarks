@@ -22,6 +22,7 @@ class MNIST(pytry.NengoTrial):
         self.param('iterations of backprop to run', n_backprop=0)
         self.param('learning rate', learning_rate=1e-3)
         self.param('iterations of feedback alignment to run', n_feedback=0)
+        self.param('regularization', reg=0.1)
 
 
     def model(self, p):
@@ -67,6 +68,7 @@ class MNIST(pytry.NengoTrial):
             c = nengo.Connection(ens, result, 
                                  eval_points=x[:p.n_training], 
                                  function=y[:p.n_training],
+                                 solver=nengo.solvers.LstsqL2(reg=p.reg),
                                  synapse=p.synapse)
 
             self.p_output = nengo.Probe(result)
