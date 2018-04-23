@@ -25,7 +25,7 @@ def wrap(obj):
             for param in self.param_defaults:
                 setattr(obj, param, getattr(p, param))
 
-            return obj.evaluate(sim, plt)
+            return obj.evaluate(sim, plt=plt)
 
     wrapped = PytryWrapper()
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     benchmark = sys.argv[1]
 
     if benchmark not in nengo_benchmarks.all_benchmarks:
-        raise KeyError("%s is not a known benchmark" % benchmark)
+        raise KeyError("'%s' is not a known benchmark" % benchmark)
     trial = wrap(nengo_benchmarks.all_benchmarks[benchmark]())
 
     trial.run(**pytry.parser.parse_args(trial, args=None, allow_filename=True))

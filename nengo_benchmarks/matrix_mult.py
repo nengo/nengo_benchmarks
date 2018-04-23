@@ -16,9 +16,9 @@ class MatrixMultiply(object):
     Parameters
     ----------
     n_neurons : int
-        Number of neurons per scalar multiply
+        Number of neurons for multiplication
     n_neurons_io : int
-        Number of neurons for input/output buffers
+        Number of neurons per dimension for input/output buffers
     d1 : int
         Size of matrices
     d2 : int
@@ -33,7 +33,7 @@ class MatrixMultiply(object):
         Time to run simulation
     """
 
-    def __init__(self, n_neurons=200, n_neurons_io=50, d1=1, d2=2, d3=2,
+    def __init__(self, n_neurons=800, n_neurons_io=50, d1=1, d2=2, d3=2,
                  radius=1, pstc=0.01, sim_time=0.5):
         self.n_neurons = n_neurons
         self.n_neurons_io = n_neurons_io
@@ -73,7 +73,8 @@ class MatrixMultiply(object):
             # the C matrix holds the intermediate product calculations
             # need to compute D1*D2*D3 products to multiply 2 matrices together
             C = nengo.networks.EnsembleArray(
-                self.n_neurons, n_ensembles=self.d1 * self.d2 * self.d3,
+                self.n_neurons // (self.d1 * self.d2 * self.d3),
+                n_ensembles=self.d1 * self.d2 * self.d3,
                 label='C', radius=1.5 * self.radius, ens_dimensions=2,
                 encoders=encoders)
 

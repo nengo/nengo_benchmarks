@@ -14,7 +14,7 @@ class ConvolutionCleanup(object):
     Parameters
     ----------
     n_neurons : int
-        Number of neurons per dimension in circular convolution
+        Number of neurons per circular convolution
     dimensions : int
         Dimensionality of input/output vectors
     mem_tau : float
@@ -27,7 +27,7 @@ class ConvolutionCleanup(object):
         Amount of time per test
     """
 
-    def __init__(self, n_neurons=200, dimensions=16, mem_tau=0.1,
+    def __init__(self, n_neurons=3200, dimensions=16, mem_tau=0.1,
                  mem_input_scale=0.5, test_time=2.0, test_present_time=0.1):
         self.n_neurons = n_neurons
         self.dimensions = dimensions
@@ -44,7 +44,8 @@ class ConvolutionCleanup(object):
             model.bound = spa.Buffer(self.dimensions)
 
             cconv = nengo.networks.CircularConvolution(
-                n_neurons=self.n_neurons, dimensions=self.dimensions)
+                n_neurons=self.n_neurons // self.dimensions,
+                dimensions=self.dimensions)
 
             nengo.Connection(model.shape.state.output, cconv.A)
             nengo.Connection(model.color.state.output, cconv.B)

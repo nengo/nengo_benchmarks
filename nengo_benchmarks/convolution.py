@@ -17,7 +17,7 @@ class CircularConvolution(object):
     Parameters
     ----------
     n_neurons : int
-        Neurons per dimension in circular convolution
+        Neurons per circular convolution
     dimensions : int
         Dimensionality of input/output vectors
     sim_time : float
@@ -27,11 +27,11 @@ class CircularConvolution(object):
     pstc : float
         Post-synaptic time constant
     n_neurons_io : int
-        Neurons per dimension in input/output buffers
+        Neurons per input/output buffer
     """
 
-    def __init__(self, n_neurons=200, dimensions=8, sim_time=0.5,
-                 subdimensions=8, pstc=0.01, n_neurons_io=50):
+    def __init__(self, n_neurons=1600, dimensions=8, sim_time=0.5,
+                 subdimensions=8, pstc=0.01, n_neurons_io=400):
         self.n_neurons = n_neurons
         self.dimensions = dimensions
         self.sim_time = sim_time
@@ -44,18 +44,18 @@ class CircularConvolution(object):
         with model:
             model.inA = spa.Buffer(
                 self.dimensions, subdimensions=self.subdimensions,
-                neurons_per_dimension=self.n_neurons_io)
+                neurons_per_dimension=self.n_neurons_io // self.dimensions)
             model.inB = spa.Buffer(
                 self.dimensions, subdimensions=self.subdimensions,
-                neurons_per_dimension=self.n_neurons_io)
+                neurons_per_dimension=self.n_neurons_io // self.dimensions)
 
             model.result = spa.Buffer(
                 self.dimensions, subdimensions=self.subdimensions,
-                neurons_per_dimension=self.n_neurons_io)
+                neurons_per_dimension=self.n_neurons_io // self.dimensions)
 
-            model.cortical = spa.Cortical(spa.Actions('result = inA * inB'),
-                                          synapse=self.pstc,
-                                          neurons_cconv=self.n_neurons)
+            model.cortical = spa.Cortical(
+                spa.Actions('result = inA * inB'), synapse=self.pstc,
+                neurons_cconv=self.n_neurons // self.dimensions)
 
             model.input = spa.Input(inA='A', inB='B')
 

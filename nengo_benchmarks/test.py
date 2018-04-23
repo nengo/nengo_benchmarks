@@ -13,11 +13,13 @@ def test_all(Benchmark, use_pytry):
     # use dimensions or n_neurons as the parameter (to make sure that we can
     # pass parameters)
     params = inspect.signature(Benchmark.__init__).parameters
+    kwargs = {}
     if "dimensions" in params:
-        kwargs = {"dimensions": 1}
-    elif "n_neurons" in params:
-        kwargs = {"n_neurons": 1}
-    else:
+        kwargs["dimensions"] = 1
+    if "n_neurons" in params:
+        kwargs["n_neurons"] = 8
+
+    if len(kwargs) == 0:
         raise KeyError("Benchmark does not contain a dimensions/n_neurons "
                        "parameter")
 
