@@ -1,57 +1,74 @@
-"""
-Nengo Benchmark Model: Communication Channel
-
-Input: Randomly chosen D-dimensional value
-Ouput: the same value as the input
-"""
-
 import nengo
 import numpy as np
-import pytry
 import timeit
 
-class CommunicationChannel(pytry.NengoTrial):
-    def params(self):
-        self.param('number of dimensions', D=2)
-        self.param('number of layers', L=2)
-        self.param('number of neurons per layer', N=100)
-        self.param('synaptic time constant', pstc=0.01)
-        self.param('simulation time', T=1.0)
+import nengo_benchmarks
 
-    def model(self, p):
+
+@nengo_benchmarks.register("comm_channel")
+class CommunicationChannel(object):
+    """
+    Nengo Benchmark Model: Communication Channel
+
+    Input: Randomly chosen D-dimensional value
+    Ouput: the same value as the input
+
+    Parameters
+    ----------
+    n_neurons : int
+        Number of neurons per layer
+    dimensions : int
+        Number of dimensions
+    layers : int
+        Number of layers
+    pstc : float
+        Synaptic time constant
+    sim_time : float
+        Simulation time
+    """
+
+    def __init__(self, n_neurons=100, dimensions=2, layers=2, pstc=0.01,
+                 sim_time=1.0):
+        self.n_neurons = n_neurons
+        self.dimensions = dimensions
+        self.layers = layers
+        self.pstc = pstc
+        self.sim_time = sim_time
+
+    def model(self):
         model = nengo.Network()
         with model:
-            value = np.random.randn(p.D)
+            value = np.random.randn(self.dimensions)
             value /= np.linalg.norm(value)
 
             stim = nengo.Node(value)
 
-            layers = [nengo.Ensemble(p.N, p.D) for i in range(p.L)]
+            layers = [nengo.Ensemble(self.n_neurons, self.dimensions)
+                      for _ in range(self.layers)]
 
             nengo.Connection(stim, layers[0], synapse=None)
-            for i in range(p.L-1):
-                nengo.Connection(layers[i], layers[i+1], synapse=p.pstc)
+            for i in range(self.layers - 1):
+                nengo.Connection(layers[i], layers[i + 1], synapse=self.pstc)
 
-            self.pInput = nengo.Probe(stim)
-            self.pOutput = nengo.Probe(layers[-1], synapse=p.pstc)
+            self.p_input = nengo.Probe(stim)
+            self.p_output = nengo.Probe(layers[-1], synapse=self.pstc)
         return model
 
-
-    def evaluate(self, p, sim, plt):
+    def evaluate(self, sim, plt=None):
         start = timeit.default_timer()
-        sim.run(p.T)
+        sim.run(self.sim_time)
         end = timeit.default_timer()
-        speed = p.T / (end - start)
+        speed = self.sim_time / (end - start)
 
-        ideal = sim.data[self.pInput]
-        for i in range(p.L):
-            ideal = nengo.Lowpass(p.pstc).filt(ideal, dt=p.dt, y0=0)
+        ideal = sim.data[self.p_input]
+        for i in range(self.layers):
+            ideal = nengo.Lowpass(self.pstc).filt(ideal, dt=sim.dt, y0=0)
 
         if plt is not None:
-            plt.plot(sim.trange(), sim.data[self.pOutput])
+            plt.plot(sim.trange(), sim.data[self.p_output])
             plt.gca().set_color_cycle(None)
             plt.plot(sim.trange(), ideal, ls='--')
             plt.ylim(-1, 1)
 
-        rmse = np.sqrt(np.mean((sim.data[self.pOutput] - ideal)**2))
+        rmse = np.sqrt(np.mean((sim.data[self.p_output] - ideal) ** 2))
         return dict(rmse=rmse, speed=speed)
