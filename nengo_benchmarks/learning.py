@@ -58,7 +58,8 @@ class LearningSpeedup(object):
                 function=lambda x: np.random.random(size=self.dimensions),
                 learning_rule_type=nengo.PES(learning_rate=self.learn_rate))
 
-            slow = nengo.networks.Product(self.n_neurons * 2, self.dimensions)
+            slow = nengo.networks.Product(
+                self.n_neurons * 2 // self.dimensions, self.dimensions)
             T_context = self.sim_time / self.n_switches
             context = nengo.Node(lambda t: 1 if int(t / T_context) % 2 else -1)
 
