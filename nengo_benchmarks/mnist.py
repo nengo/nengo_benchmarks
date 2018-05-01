@@ -117,10 +117,10 @@ class MNIST(object):
                         seed=np.random.randint(0x7FFFFFFF))
         return model
 
-    def evaluate(self, sim, plt=None):
+    def evaluate(self, sim, plt=None, **kwargs):
         start = timeit.default_timer()
         T = self.n_testing * self.t_image
-        sim.run(T)
+        sim.run(T, **kwargs)
         end = timeit.default_timer()
         speed = T / (end - start)
 

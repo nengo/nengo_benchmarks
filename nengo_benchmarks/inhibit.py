@@ -50,9 +50,9 @@ class Inhibition(object):
             self.p_ens = nengo.Probe(ens, synapse=0.01)
         return model
 
-    def evaluate(self, sim, plt=None):
+    def evaluate(self, sim, plt=None, **kwargs):
         start = timeit.default_timer()
-        sim.run(self.sim_time)
+        sim.run(self.sim_time, **kwargs)
         end = timeit.default_timer()
         speed = self.sim_time / (end - start)
 

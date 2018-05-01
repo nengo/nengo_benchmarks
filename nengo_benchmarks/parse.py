@@ -59,10 +59,10 @@ class Parsing(object):
             self.p_motor = nengo.Probe(model.motor.state.output, synapse=0.03)
         return model
 
-    def evaluate(self, sim, plt=None):
+    def evaluate(self, sim, plt=None, **kwargs):
         T = self.time_per_word * 3
         start = timeit.default_timer()
-        sim.run(T)
+        sim.run(T, **kwargs)
         end = timeit.default_timer()
         speed = T / (end - start)
 

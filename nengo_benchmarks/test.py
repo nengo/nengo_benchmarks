@@ -28,4 +28,4 @@ def test_all(Benchmark, use_pytry):
     else:
         bench = Benchmark(**kwargs)
         with nengo.Simulator(bench.model()) as sim:
-            bench.evaluate(sim, plt=plt)
+            bench.evaluate(sim, plt=plt, progress_bar=False)

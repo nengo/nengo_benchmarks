@@ -120,11 +120,11 @@ class ConvolutionCleanup(object):
         self.vocab_wm = model.get_output_vocab('bound')
         return model
 
-    def evaluate(self, sim, plt=None):
+    def evaluate(self, sim, plt=None, **kwargs):
         stim_time = self.stim_time
         T = stim_time * 2 + self.test_time
         start = timeit.default_timer()
-        sim.run(T)
+        sim.run(T, **kwargs)
         end = timeit.default_timer()
         speed = T / (end - start)
 

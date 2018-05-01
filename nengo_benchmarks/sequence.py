@@ -50,9 +50,9 @@ class SPASequence(object):
             self.probe = nengo.Probe(model.thal.actions.output, synapse=0.03)
         return model
 
-    def evaluate(self, sim, plt=None):
+    def evaluate(self, sim, plt=None, **kwargs):
         start = timeit.default_timer()
-        sim.run(self.sim_time)
+        sim.run(self.sim_time, **kwargs)
         end = timeit.default_timer()
         speed = self.sim_time / (end - start)
 

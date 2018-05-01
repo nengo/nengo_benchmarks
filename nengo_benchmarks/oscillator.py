@@ -74,10 +74,10 @@ class Oscillator(object):
             self.p_freq = nengo.Probe(freq, synapse=0.03)
         return model
 
-    def evaluate(self, sim, plt=None):
+    def evaluate(self, sim, plt=None, **kwargs):
         T = self.sim_time * self.n_freq
         start = timeit.default_timer()
-        sim.run(T)
+        sim.run(T, **kwargs)
         end = timeit.default_timer()
         speed = T / (end - start)
 

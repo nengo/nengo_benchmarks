@@ -131,9 +131,9 @@ class MatrixMultiply(object):
             self.p_ideal = nengo.Probe(ideal, synapse=None)
         return model
 
-    def evaluate(self, sim, plt=None):
+    def evaluate(self, sim, plt=None, **kwargs):
         start = timeit.default_timer()
-        sim.run(self.sim_time)
+        sim.run(self.sim_time, **kwargs)
         end = timeit.default_timer()
         speed = self.sim_time / (end - start)
 

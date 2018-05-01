@@ -62,10 +62,10 @@ class SemanticMemory(object):
 
         return model
 
-    def evaluate(self, sim, plt=None):
+    def evaluate(self, sim, plt=None, **kwargs):
         T = self.recall_time + self.time_per_symbol * self.n_symbols
         start = timeit.default_timer()
-        sim.run(T)
+        sim.run(T, **kwargs)
         end = timeit.default_timer()
         speed = T / (end - start)
 
