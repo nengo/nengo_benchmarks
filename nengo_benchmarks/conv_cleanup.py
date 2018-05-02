@@ -1,64 +1,92 @@
-import pytry
 import nengo
 import nengo.spa as spa
 import numpy as np
 import timeit
 
-class ConvolutionCleanup(pytry.NengoTrial):
-    def params(self):
-        self.param('dimensionality', D=16)
-        self.param('memory time constant', mem_tau=0.1)
-        self.param('input scaling on memory', mem_input_scale=0.5)
-        self.param('amount of time to test memory for', test_time=2.0)
-        self.param('amount of time per test', test_present_time=0.1)
+import nengo_benchmarks
 
-    def model(self, p):
+
+@nengo_benchmarks.register("conv_cleanup")
+class ConvolutionCleanup(object):
+    """
+    Nengo Benchmark Model: Convolution Cleanup
+
+    Parameters
+    ----------
+    n_neurons : int
+        Number of neurons per circular convolution
+    dimensions : int
+        Dimensionality of input/output vectors
+    mem_tau : float
+        Memory time constant
+    mem_input_scale : float
+        Input scaling on memory
+    test_time : float
+        Amount of time to test memory for
+    test_present_time : float
+        Amount of time per test
+    """
+
+    def __init__(self, n_neurons=3200, dimensions=16, mem_tau=0.1,
+                 mem_input_scale=0.5, test_time=2.0, test_present_time=0.1):
+        self.n_neurons = n_neurons
+        self.dimensions = dimensions
+        self.mem_tau = mem_tau
+        self.mem_input_scale = mem_input_scale
+        self.test_time = test_time
+        self.test_present_time = test_present_time
+
+    def model(self):
         model = spa.SPA()
         with model:
-            model.shape = spa.Buffer(p.D)
-            model.color = spa.Buffer(p.D)
-            model.bound = spa.Buffer(p.D)
+            model.shape = spa.Buffer(self.dimensions)
+            model.color = spa.Buffer(self.dimensions)
+            model.bound = spa.Buffer(self.dimensions)
 
-            cconv = nengo.networks.CircularConvolution(n_neurons=200,
-                                        dimensions=p.D)
+            cconv = nengo.networks.CircularConvolution(
+                n_neurons=self.n_neurons // self.dimensions,
+                dimensions=self.dimensions)
 
             nengo.Connection(model.shape.state.output, cconv.A)
             nengo.Connection(model.color.state.output, cconv.B)
-            nengo.Connection(cconv.output, model.bound.state.input,
-                             transform=p.mem_input_scale, synapse=p.mem_tau)
+            nengo.Connection(
+                cconv.output, model.bound.state.input,
+                transform=self.mem_input_scale, synapse=self.mem_tau)
 
-            deconv = nengo.networks.CircularConvolution(n_neurons=200,
-                                        dimensions=p.D, invert_b=True)
+            deconv = nengo.networks.CircularConvolution(
+                n_neurons=self.n_neurons, dimensions=self.dimensions,
+                invert_b=True)
             deconv.label = 'deconv'
 
-            model.query = spa.Buffer(p.D)
-            model.result = spa.Buffer(p.D)
+            model.query = spa.Buffer(self.dimensions)
+            model.result = spa.Buffer(self.dimensions)
 
             nengo.Connection(model.bound.state.output, deconv.A)
             nengo.Connection(model.query.state.output, deconv.B)
 
             nengo.Connection(deconv.output, model.result.state.input,
-                            transform=2)
+                             transform=2)
 
             nengo.Connection(model.bound.state.output, model.bound.state.input,
-                                synapse=p.mem_tau)
+                             synapse=self.mem_tau)
 
             vocab = model.get_output_vocab('result')
             vocab.parse('RED+BLUE+CIRCLE+SQUARE')
             model.cleanup = spa.AssociativeMemory(vocab)
 
-            model.clean_result = spa.Buffer(p.D)
+            model.clean_result = spa.Buffer(self.dimensions)
 
             nengo.Connection(model.result.state.output, model.cleanup.input)
             nengo.Connection(model.cleanup.output,
                              model.clean_result.state.input)
 
-            stim_time = p.mem_tau / p.mem_input_scale
+            stim_time = self.mem_tau / self.mem_input_scale
             self.stim_time = stim_time
+
             def stim_color(t):
                 if 0 < t < stim_time:
                     return 'BLUE'
-                elif stim_time < t < stim_time*2:
+                elif stim_time < t < stim_time * 2:
                     return 'RED'
                 else:
                     return '0'
@@ -66,23 +94,23 @@ class ConvolutionCleanup(pytry.NengoTrial):
             def stim_shape(t):
                 if 0 < t < stim_time:
                     return 'CIRCLE'
-                elif stim_time < t < stim_time*2:
+                elif stim_time < t < stim_time * 2:
                     return 'SQUARE'
                 else:
                     return '0'
 
             def stim_query(t):
-                if t < stim_time*2:
+                if t < stim_time * 2:
                     return '0'
                 else:
-                    index = int((t - stim_time*2) / p.test_present_time)
+                    index = int((t - stim_time * 2) / self.test_present_time)
                     return ['BLUE', 'RED', 'CIRCLE', 'SQUARE'][index % 4]
 
             model.input = spa.Input(
-                shape = stim_shape,
-                color = stim_color,
-                query = stim_query,
-                )
+                shape=stim_shape,
+                color=stim_color,
+                query=stim_query,
+            )
 
             self.probe = nengo.Probe(model.clean_result.state.output,
                                      synapse=0.02)
@@ -92,11 +120,11 @@ class ConvolutionCleanup(pytry.NengoTrial):
         self.vocab_wm = model.get_output_vocab('bound')
         return model
 
-    def evaluate(self, p, sim, plt):
+    def evaluate(self, sim, plt=None, **kwargs):
         stim_time = self.stim_time
-        T = stim_time * 2 + p.test_time
+        T = stim_time * 2 + self.test_time
         start = timeit.default_timer()
-        sim.run(T)
+        sim.run(T, **kwargs)
         end = timeit.default_timer()
         speed = T / (end - start)
 
@@ -119,23 +147,22 @@ class ConvolutionCleanup(pytry.NengoTrial):
         times = []
         recall_strength = []
         index = 0
-        t = stim_time * 2 + p.test_present_time
+        t = stim_time * 2 + self.test_present_time
         while t < T:
-            i = int(t / p.dt) - 1
+            i = int(t / sim.dt) - 1
             v = vals[index, i]
             recall_strength.append(v)
             index = (index + 1) % 4
             times.append(t)
-            t += p.test_present_time
-
+            t += self.test_present_time
 
         if plt is not None:
-            plt.subplot(2,1,1)
+            plt.subplot(2, 1, 1)
             plt.plot(sim.trange(), vals.T)
-            plt.legend(['CIRCLE', 'SQUARE', 'BLUE' ,'RED'], loc='best')
+            plt.legend(['CIRCLE', 'SQUARE', 'BLUE', 'RED'], loc='best')
             for t in times:
                 plt.axvline(t)
-            plt.subplot(2,1,2)
+            plt.subplot(2, 1, 2)
             plt.plot(sim.trange(), vals_wm.T)
 
         return dict(mean_recall_strength=np.mean(recall_strength),
