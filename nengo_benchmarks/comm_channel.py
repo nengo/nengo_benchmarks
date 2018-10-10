@@ -49,7 +49,7 @@ class CommunicationChannel(pytry.NengoTrial):
 
         if plt is not None:
             plt.plot(sim.trange(), sim.data[self.pOutput])
-            plt.gca().set_color_cycle(None)
+            plt.gca().set_prop_cycle(None)
             plt.plot(sim.trange(), ideal, ls='--')
             plt.ylim(-1, 1)
 
