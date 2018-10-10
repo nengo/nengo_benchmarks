@@ -12,7 +12,7 @@ import nengo.spa as spa
 import pytry
 import timeit
 
-class SemanticMemory(pytry.NengoTrial):
+class SemanticMemoryWithRecall(pytry.NengoTrial):
     def params(self):
         self.param('time per symbol', time_per_symbol=0.2)
         self.param('time per cue', time_per_cue=0.1)
