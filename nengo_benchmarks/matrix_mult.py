@@ -88,7 +88,7 @@ class MatrixMultiply(pytry.NengoTrial):
             # since we want to
             # combine D2 pairs of elements (we sum D2 products together)
             nengo.Connection(C.product,
-                             D.input[[i/p.D2 for i in range(p.D1*p.D2*p.D3)]],
+                             D.input[[i//p.D2 for i in range(p.D1*p.D2*p.D3)]],
                              synapse=p.pstc)
 
             self.pA = nengo.Probe(A.output, synapse=p.pstc)
