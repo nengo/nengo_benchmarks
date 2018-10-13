@@ -15,27 +15,30 @@ class LearningSpeedup(pytry.NengoTrial):
         self.param('time to simulate for', T=40.0)
         self.param('number of time to change function', n_switches=2)
         self.param('learning rate', learn_rate=1e-4)
+        self.param('input frequency', input_frequency=1.0/(np.pi*2))
+        self.param('initial function value', init_func_value=0.0)
 
     def model(self, p):
         model = nengo.Network()
 
         with model:
             def stim(t):
-                return [np.sin(t+i*np.pi*2/p.D) for i in range(p.D)]
-            pre_value = nengo.Node(stim)
+                return [np.sin(t*np.pi*2*p.input_frequency+
+                               i*np.pi*2/p.D) for i in range(p.D)]
+            pre_value = nengo.Node(stim, label='pre_value')
 
-            pre = nengo.Ensemble(p.n_neurons, p.D)
-            post = nengo.Ensemble(p.n_neurons, p.D)
-            target = nengo.Ensemble(p.n_neurons, p.D)
+            pre = nengo.Ensemble(p.n_neurons, p.D, label='pre')
+            post = nengo.Ensemble(p.n_neurons, p.D, label='post')
+            target = nengo.Ensemble(p.n_neurons, p.D, label='target')
             nengo.Connection(pre_value, pre, synapse=None)
 
             conn = nengo.Connection(pre, post,
-                      function=lambda x: np.random.random(size=p.D),
+                      function=lambda x: np.ones(p.D)*p.init_func_value,
                       learning_rule_type=nengo.PES(learning_rate=p.learn_rate))
 
             slow = nengo.networks.Product(p.n_neurons*2, p.D)
             T_context = p.T / p.n_switches
-            context = nengo.Node(lambda t: 1 if int(t/T_context)%2 else -1)
+            context = nengo.Node(lambda t: 1 if int(t/T_context)%2 else -1, label='context')
 
             nengo.Connection(context, slow.A, transform=np.ones((p.D,1)))
 
@@ -43,7 +46,7 @@ class LearningSpeedup(pytry.NengoTrial):
 
             nengo.Connection(slow.output, target, synapse=p.tau_slow)
 
-            error = nengo.Ensemble(n_neurons=p.n_neurons, dimensions=p.D)
+            error = nengo.Ensemble(n_neurons=p.n_neurons, dimensions=p.D, label='error')
 
             nengo.Connection(post, error, synapse=p.tau_slow*2+p.tau_fast)
             nengo.Connection(target, error, transform=-1, synapse=p.tau_fast)
