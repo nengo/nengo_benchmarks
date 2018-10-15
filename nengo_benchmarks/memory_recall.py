@@ -104,8 +104,14 @@ class SemanticMemoryWithRecall(pytry.NengoTrial):
         if plt is not None:
             plt.subplot(2, 1, 1)
             plt.plot(sim.trange(), memory)
+            plt.legend(['S%d*M%d' % (i,i) for i in range(p.n_symbols)],
+                       loc='best')
+            plt.ylabel('memory')
             plt.subplot(2, 1, 2)
             plt.plot(sim.trange(), motor)
+            plt.legend(self.vocab.keys, loc='center left', fontsize='x-small')
+            plt.xlabel('time (s)')
+            plt.ylabel('recall')
 
 
         return dict(mag_correct=np.mean(mag_correct),

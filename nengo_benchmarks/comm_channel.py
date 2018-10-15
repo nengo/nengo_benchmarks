@@ -48,10 +48,17 @@ class CommunicationChannel(pytry.NengoTrial):
             ideal = nengo.Lowpass(p.pstc).filt(ideal, dt=p.dt, y0=0)
 
         if plt is not None:
-            plt.plot(sim.trange(), sim.data[self.pOutput])
+            for i in range(p.D):
+                plt.plot(sim.trange(), sim.data[self.pOutput][:,i],
+                         label='output (dim %d)'%i)
             plt.gca().set_prop_cycle(None)
-            plt.plot(sim.trange(), ideal, ls='--')
+            for i in range(p.D):
+                plt.plot(sim.trange(), ideal[:,i], ls='--',
+                         label='ideal (dim %d)'%i)
             plt.ylim(-1, 1)
+            plt.legend(loc='best')
+            plt.xlabel('time (s)')
+            plt.ylabel('decoded value')
 
         rmse = np.sqrt(np.mean((sim.data[self.pOutput] - ideal)**2))
         return dict(rmse=rmse, speed=speed)

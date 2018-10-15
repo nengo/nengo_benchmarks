@@ -111,7 +111,11 @@ class MNIST(pytry.NengoTrial):
         if plt is not None:
             plt.subplot(2, 1, 1)
             plt.plot(sim.trange(), sim.data[self.p_output][:,:10])
+            plt.xlim(0, p.t_image * min(p.n_testing, 20))
+            plt.ylabel('output')
             plt.subplot(2, 1, 2)
             plt.plot(sim.trange(), sim.data[self.p_output][:,10:])
+            plt.legend(['correct', 'chosen'], loc='best')
+            plt.xlim(0, p.t_image * min(p.n_testing, 20))
 
         return dict(speed=speed, score=score, count=count, confusion=confusion)

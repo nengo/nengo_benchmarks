@@ -66,9 +66,12 @@ class Parsing(pytry.NengoTrial):
         if plt is not None:
             plt.subplot(2, 1, 1)
             plt.plot(sim.trange(), sim.data[self.p_thal])
+            plt.ylabel('action')
+            plt.legend(['do_verb', 'do_noun', 'respond'], loc='best')
             plt.subplot(2, 1, 2)
             plt.plot(sim.trange(), data)
-            plt.plot(sim.trange(), data[:,correct_index], lw=2)
+            plt.xlabel('time (s)')
+            plt.ylabel('response')
 
         return dict(mag_correct=mag_correct, mag_others=mag_others,
                     mag_second=mag_second,

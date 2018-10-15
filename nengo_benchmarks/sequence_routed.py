@@ -66,6 +66,9 @@ class SPASequenceRouted(pytry.NengoTrial):
             for i, peak in enumerate(peaks):
                 plt.hlines(peak, times[change_points[i] + index],
                                   times[change_points[i+1] + index])
+            plt.xlabel('time (s)')
+            plt.ylabel('action')
+            plt.legend(['action %d' % i for i in range(p.n_actions)], loc='best')
 
 
 

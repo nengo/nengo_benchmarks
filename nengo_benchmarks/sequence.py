@@ -60,6 +60,9 @@ class SPASequence(pytry.NengoTrial):
                 plt.plot([p.dt*(change_points[i]+index), 
                           p.dt*(change_points[i+1]+index)],
                          [peak, peak], color='b')
+            plt.xlabel('time (s)')
+            plt.ylabel('action')
+            plt.legend(['action %d' % i for i in range(p.n_actions)], loc='best')
 
         return dict(period=np.mean(intervals), period_sd=np.std(intervals),
                     peak=np.mean(peaks), peak_sd=np.std(peaks),

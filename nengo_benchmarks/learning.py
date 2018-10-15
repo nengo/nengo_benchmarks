@@ -72,11 +72,14 @@ class LearningSpeedup(pytry.NengoTrial):
 
         if plt is not None:
             plt.subplot(2, 1, 1)
-            plt.plot(sim.trange(), sim.data[self.probe_target])
-            plt.plot(sim.trange(), ideal)
+            plt.plot(sim.trange(), sim.data[self.probe_pre], label='input')
+            plt.plot(sim.trange(), sim.data[self.probe_target], label='target')
+            plt.legend(loc='best')
             plt.subplot(2, 1, 2)
-            plt.plot(sim.trange(), sim.data[self.probe_post])
-            plt.plot(sim.trange(), ideal)
+            plt.plot(sim.trange(), sim.data[self.probe_post], label='output')
+            plt.plot(sim.trange(), ideal, label='ideal', ls='--')
+            plt.legend(loc='best')
+            plt.xlabel('time (s)')
 
         rmse = np.sqrt(np.mean((sim.data[self.probe_post] - ideal)**2))
         return dict(rmse=rmse, speed=speed)

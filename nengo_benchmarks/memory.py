@@ -69,6 +69,10 @@ class SemanticMemory(pytry.NengoTrial):
 
         if plt is not None:
             plt.plot(sim.trange(), memory)
+            plt.legend(['S%d*M%d' % (i,i) for i in range(p.n_symbols)],
+                       loc='best')
+            plt.xlabel('time (s)')
+            plt.ylabel('memory')
 
 
         return dict(memory = mean_memory,

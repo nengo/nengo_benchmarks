@@ -130,13 +130,17 @@ class ConvolutionCleanup(pytry.NengoTrial):
 
 
         if plt is not None:
-            plt.subplot(2,1,1)
+            plt.subplot(2,1,2)
             plt.plot(sim.trange(), vals.T)
             plt.legend(['CIRCLE', 'SQUARE', 'BLUE' ,'RED'], loc='best')
+            plt.ylabel('recall')
             for t in times:
                 plt.axvline(t)
-            plt.subplot(2,1,2)
+            plt.subplot(2,1,1)
             plt.plot(sim.trange(), vals_wm.T)
+            plt.legend(['BLUE*CIRCLE', 'RED*SQUARE'], loc='best')
+            plt.xlabel('time (s)')
+            plt.ylabel('memory')
 
         return dict(mean_recall_strength=np.mean(recall_strength),
                     speed=speed)

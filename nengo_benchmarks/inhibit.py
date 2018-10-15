@@ -50,6 +50,8 @@ class InhibitionTrial(pytry.NengoTrial):
             for t in time_to_inhibit:
                 plt.axvline(t)
             plt.axhline(0.05, linestyle='--', c='k')
+            plt.xlabel('time (s) with increasing inhibition')
+            plt.ylabel('decoded output')
 
         return dict(time_to_inhibit=np.mean(time_to_inhibit),
                     speed=speed)

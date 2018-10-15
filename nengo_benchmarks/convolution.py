@@ -59,10 +59,18 @@ class CircularConvolution(pytry.NengoTrial):
         index = int(p.pstc*3*4 / p.dt)
 
         if plt is not None:
+            for i in range(p.D):
+                plt.plot(sim.trange(), sim.data[self.probe][:,i],
+                         label='output (dim %d)'%i if i==0 else None)
             plt.plot(sim.trange(), sim.data[self.probe])
             plt.gca().set_prop_cycle(None)
-            plt.plot(sim.trange(), ideal, ls='--')
+            for i in range(p.D):
+                plt.plot(sim.trange(), ideal[:,i], ls='--',
+                         label='ideal (dim %d)'%i if i==0 else None)
             plt.axvline(index*p.dt, c='#aaaaaa')
+            plt.legend(loc='best')
+            plt.xlabel('time (s)')
+            plt.ylabel('decoded value')
 
         rmse = np.sqrt(np.mean((sim.data[self.probe][index:]-ideal[index:])**2))
         return dict(rmse=rmse, speed=speed)

@@ -14,9 +14,9 @@ class Lorenz(pytry.NengoTrial):
     def params(self):
         self.param('number of neurons', N=2000)
         self.param('post-synaptic time constant', tau=0.1)
-        self.param('Lorenz variable', sigma=10.0)
-        self.param('Lorenz variable', beta=8.0/3)
-        self.param('Lorenz variable', rho=28.0)
+        self.param('Lorenz variable sigma', sigma=10.0)
+        self.param('Lorenz variable beta', beta=8.0/3)
+        self.param('Lorenz variable rho', rho=28.0)
         self.param('time to run simulation', T=10.0)
 
     def model(self, p):
@@ -44,6 +44,8 @@ class Lorenz(pytry.NengoTrial):
 
         if plt is not None:
             plt.plot(sim.trange(), sim.data[self.pState])
+            plt.xlabel('time (s)')
+            plt.ylabel('state')
 
         return dict(
             mean=np.mean(sim.data[self.pState], axis=0).mean(),

@@ -93,16 +93,17 @@ class Oscillator(pytry.NengoTrial):
             lines = plt.plot(np.fft.fftshift(freqs),
                              np.fft.fftshift(fft, axes=1).T)
             plt.xlim(-p.f_max * 2, p.f_max * 2)
-            plt.xlabel('FFT of decoded value (Hz)')
+            plt.ylabel('FFT (Hz)')
             plt.title('Score: %1.4f' % np.mean(score))
             plt.legend(lines, ['%1.3f' % s for s in score],
                          loc='best', prop={'size': 8}, title='score')
 
             plt.subplot(2, 1, 2)
             lines = plt.plot(np.arange(steps) * p.dt, data.T)
-            plt.xlabel('decoded value')
+            plt.ylabel('value')
             plt.legend(lines, ['%gHz' % f for f in ideal_freqs],
                          loc='best', prop={'size': 8})
+            plt.tight_layout()
 
         return dict(scores=score,
                     mean_score=np.mean(score),
